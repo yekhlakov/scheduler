@@ -1,5 +1,5 @@
 #include <iostream>
-#include "scheduler.h"
+#include "maxy/control/scheduler.h"
 
 int main ()
 {
