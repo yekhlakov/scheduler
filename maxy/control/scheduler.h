@@ -21,7 +21,7 @@ namespace maxy
 			// time point type
 			using Time_point_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 			// type of the core container
-			using Map_type = std::map<Time_point_t, Task_fn>;
+			using Map_type = std::multimap<Time_point_t, Task_fn>;
 
 			// The task container
 			Map_type schedule;
@@ -44,24 +44,19 @@ namespace maxy
 				std::lock_guard<std::mutex> g (lock);
 
 				auto b = schedule.begin ();
-				if (b == schedule.end ())
+				auto e = schedule.end ();
+				if (b == e)
 				{
 					return b;
 				}
 
-				auto e = schedule.lower_bound (now ());
-				if (b != e)
+				auto x = schedule.upper_bound (now ());
+				if (b != x)
 				{
 					return b;
 				}
 
 				return e;
-			}
-
-			// Get current time point
-			Time_point_t now ()
-			{
-				return std::chrono::high_resolution_clock::now ();
 			}
 
 			// Remove a task pointed at by given iterator
@@ -72,6 +67,12 @@ namespace maxy
 			}
 
 		public:
+
+			// Get current time point
+			Time_point_t now ()
+			{
+				return std::chrono::high_resolution_clock::now ();
+			}
 
 			// Default wakeup interval is 100 ms
 			scheduler () : scheduler {std::chrono::milliseconds (100)} {};
@@ -105,7 +106,7 @@ namespace maxy
 			void add (Time_point_t tm, Task_fn task)
 			{
 				std::lock_guard<std::mutex> g (lock);
-				schedule[tm] = task;
+				schedule.insert (std::make_pair (tm, task));
 			}
 
 			// Add a task to be executed after given timeout from now
@@ -118,6 +119,12 @@ namespace maxy
 			void add (long long seconds, Task_fn task)
 			{
 				add (now () + std::chrono::seconds (seconds), task);
+			}
+
+			// Add a task for immediate execution
+			void add (Task_fn task)
+			{
+				add (now (), task);
 			}
 
 			// Destructor just stops the worker thread
